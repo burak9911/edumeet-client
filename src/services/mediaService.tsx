@@ -1031,6 +1031,8 @@ export class MediaService extends EventEmitter {
 		delete this.speechRecognition.onresult;
 		this.speechRecognition = undefined;
 
+		this.updateTranscriptUI('');
+
 		this.emit('transcriptionStopped');
 	}
 
