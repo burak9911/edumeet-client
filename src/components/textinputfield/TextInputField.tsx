@@ -1,5 +1,5 @@
 import { ChangeEvent, FocusEvent, KeyboardEvent, ReactNode } from 'react';
-import { InputAdornment, TextField } from '@mui/material';
+import { InputAdornment, TextField, TextFieldProps } from '@mui/material';
 import randomString from 'random-string';
 
 interface TextInputFieldProps {
@@ -15,6 +15,7 @@ interface TextInputFieldProps {
 	endAdornment?: ReactNode;
 	randomizeOnBlank?: boolean;
 	autoFocus?: boolean;
+	InputLabelProps?: TextFieldProps['InputLabelProps'];
 }
 
 const TextInputField = ({
@@ -25,6 +26,7 @@ const TextInputField = ({
 	startAdornment,
 	endAdornment,
 	randomizeOnBlank,
+	InputLabelProps,
 	...rest
 }: TextInputFieldProps): JSX.Element => {
 	return (
@@ -32,6 +34,7 @@ const TextInputField = ({
 			value={value}
 			variant='outlined'
 			onFocus={(event: FocusEvent<HTMLInputElement>) => event.target.select()}
+			InputLabelProps={InputLabelProps}
 			InputProps={{
 				startAdornment: (
 					<InputAdornment position='start' children={startAdornment} />
