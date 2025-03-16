@@ -941,7 +941,6 @@ export class MediaService extends EventEmitter {
 		if (!window.webkitSpeechRecognition) return logger.warn('startTranscription() | SpeechRecognition not supported');
 		if (this.speechRecognitionRunning) return logger.warn('startTranscription() | SpeechRecognition already started');
 
-		// 🔍 1️⃣ Başka kullanıcıların seslerini al
 		const audioConsumers = Array.from(this.consumers.values()).filter((consumer) => consumer.kind === 'audio');
 
 		if (audioConsumers.length === 0) {
@@ -957,7 +956,6 @@ export class MediaService extends EventEmitter {
 
 		logger.debug('🔍 Kullanılacak ses kaynağı:', targetConsumer);
 
-		// 🔊 2️⃣ Web Audio API ile ses kaynağını oluştur
 		const audioContext = new AudioContext();
 		const mediaStream = new MediaStream();
 
@@ -971,18 +969,17 @@ export class MediaService extends EventEmitter {
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const finalStream = destination.stream;
 
-		// 🔴 3️⃣ WebRTC üzerinden transcription için DataChannel aç
 		const dataProducer = await this.produceData({
 			ordered: false,
 			maxPacketLifeTime: 3000,
 			label: 'transcription',
 		});
 
-		// 🗣️ 4️⃣ SpeechRecognition başlat
+		// 🗣️ SpeechRecognition başlat
 		this.speechRecognition = new window.webkitSpeechRecognition();
 		this.speechRecognition.continuous = true;
 		this.speechRecognition.interimResults = true;
-		this.speechRecognition.lang = intl.locale || 'en-US';
+		this.speechRecognition.lang = 'tr-TR'; // Ön tanımlı dil, ancak otomatik algılayacağız
 
 		let transcriptId = Math.round(Math.random() * 10000000);
 
@@ -991,18 +988,19 @@ export class MediaService extends EventEmitter {
 			let isFinal = false;
 			let speechResult = '';
 
-			const targetLanguage = intl.locale || 'en-US';
-
-			logger.debug(`🎯 Güncellenmiş hedef dil: ${targetLanguage}`);
-
 			for (let i = event.resultIndex; i < event.results.length; i++) {
 				if (event.results[i].isFinal) isFinal = true;
-
 				speechResult += event.results[i][0].transcript;
 			}
 
-			// 🔄 5️⃣ Algılanan konuşmayı hedef dile çevir
-			const translatedText = await this.translateText(speechResult, targetLanguage);
+			// 🌍 Konuşulan dili otomatik algıla
+			const detectedLanguage = await this.detectLanguage(speechResult);
+			const targetLanguage = intl.locale || 'en-US';
+
+			logger.debug(`🗣 Algılanan dil: ${detectedLanguage} 🎯 Hedef dil: ${targetLanguage}`);
+
+			// 🌍 Konuşmayı algılanan dilden hedef dile çevir
+			const translatedText = await this.translateText(speechResult, detectedLanguage, targetLanguage);
 
 			this.updateTranscriptUI(translatedText);
 
@@ -1010,7 +1008,7 @@ export class MediaService extends EventEmitter {
 				method: 'transcript',
 				data: {
 					id: transcriptId,
-					transcript: translatedText, // Çevrilmiş metin
+					transcript: translatedText,
 					done: isFinal
 				}
 			});
@@ -1047,7 +1045,6 @@ export class MediaService extends EventEmitter {
 			}
 		};
 
-		// 🚀 6️⃣ Çeviri sürecini başlat
 		this.speechRecognitionRunning = true;
 		this.speechRecognition.start();
 		this.emit('transcriptionStarted');
@@ -1073,9 +1070,9 @@ export class MediaService extends EventEmitter {
 		window.dispatchEvent(event);
 	}
 
-	private async translateText(text: string, targetLanguage: string): Promise<string> {
+	private async translateText(text: string, sourceLang: string, targetLang: string): Promise<string> {
 		try {
-			const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLanguage}&dt=t&q=${encodeURIComponent(text)}`);
+			const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`);
 			const data = await response.json();
 
 			if (data && data[0] && data[0][0]) {
@@ -1086,5 +1083,20 @@ export class MediaService extends EventEmitter {
 		}
 
 		return text; // Çeviri başarısız olursa orijinal metni döndür
+	}
+
+	private async detectLanguage(text: string): Promise<string> {
+		try {
+			const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(text)}`);
+			const data = await response.json();
+
+			if (data && data[2]) {
+				return data[2]; // Algılanan dil kodu döndürülür (örn: "tr", "en", "de")
+			}
+		} catch (error) {
+			logger.error('detectLanguage() | Error detecting language: %o', error);
+		}
+
+		return 'auto'; // Eğer dil belirlenemezse varsayılan olarak otomatik kullan
 	}
 }
