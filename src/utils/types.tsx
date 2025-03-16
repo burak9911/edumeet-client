@@ -3,9 +3,9 @@ import { ClientMonitorConfig } from '@observertc/client-monitor-js';
 import { TFLite } from '../services/effectsService';
 
 export const defaultEdumeetConfig: EdumeetConfig = {
-	qrCodeEnabled: false,
+	qrCodeEnabled: true,
 	countdownTimerEnabled: false,
-	infoTooltipEnabled: false,
+	infoTooltipEnabled: true,
 	infoTooltipText: '',
 	infoTooltipLink: '',
 	infoTooltipDesc: '',
@@ -86,14 +86,14 @@ export const defaultEdumeetConfig: EdumeetConfig = {
 			'play': '/sounds/notify.mp3'
 		}
 	},
-	title: 'edumeet',
+	title: 'craftmeet',
 	randomizeOnBlank: true,
 	transcriptionEnabled: true,
 	theme: {
-		background: 'linear-gradient(135deg, rgba(1,42,74,1) 0%, rgba(1,58,99,1) 50%, rgba(1,73,124,1) 100%)',
+		background: 'linear-gradient(90deg, rgba(51,63,220,1) 0%, rgba(51,63,220,1) 100%)',
 		appBarColor: 'rgba(0, 0, 0, 0.4)',
 		appBarFloating: true,
-		logo: 'images/logo.edumeet.svg',
+		logo: 'images/logo.svg',
 		activeSpeakerBorder: '1px solid rgba(255, 255, 255, 1.0)',
 		videoBackroundColor: 'rgba(49, 49, 49, 0.9)',
 		videoAvatarImage: 'images/buddy.svg',

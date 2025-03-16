@@ -82,7 +82,7 @@ export const stopTranscription = (): AppThunk<Promise<void>> => async (
  * This thunk action updates the preview audio track
  * with whatever contraints are set in the store. It may
  * also start or restart the track in the process.
- * 
+ *
  * @param options - Options.
  * @returns {AppThunk<Promise<void>>} Promise.
  */
@@ -104,6 +104,14 @@ export const updatePreviewMic = ({
 	const replace = Boolean(mediaService.previewMicTrack);
 
 	try {
+		const devices = await navigator.mediaDevices.enumerateDevices();
+
+		logger.debug('📌 Güncellenen Cihaz Listesi:', devices);
+
+		const hasAudioInput = devices.some((device) => device.kind === 'audioinput');
+
+		if (!hasAudioInput) throw new Error('❌ Mikrofon bulunamadı');
+
 		const {
 			autoGainControl,
 			echoCancellation,
@@ -168,6 +176,10 @@ export const updatePreviewMic = ({
 		dispatch(meActions.setPreviewMicTrackId(track.id));
 	} catch (error) {
 		logger.error('updatePreviewMic() [error:%o]', error);
+		setTimeout(() => {
+			logger.debug('📌 Mikrofon tekrar aranıyor...');
+			dispatch(updatePreviewMic());
+		}, 2000);
 	} finally {
 		dispatch(meActions.setAudioInProgress(false));
 	}
@@ -175,7 +187,7 @@ export const updatePreviewMic = ({
 
 /**
  * This thunk action stops the preview audio track.
- * 
+ *
  * @param options - Options.
  * @returns {void}
  */
@@ -204,7 +216,7 @@ export const stopPreviewMic = (): AppThunk<Promise<void>> => async (
  * This thunk action updates the preview video track
  * with whatever contraints are set in the store. It may
  * also start or restart the track in the process.
- * 
+ *
  * @param options - Options.
  * @returns {Promise<void>} Promise.
  */
@@ -270,7 +282,7 @@ export const updatePreviewWebcam = ({
 
 		const stream = await navigator.mediaDevices.getUserMedia({
 			video: videoOptions
-		});	
+		});
 
 		([ track ] = stream.getVideoTracks());
 
@@ -302,7 +314,7 @@ export const updatePreviewWebcam = ({
 
 /**
  * This thunk action stops the preview video track.
- * 
+ *
  * @param options - Options.
  * @returns {void}
  */
@@ -336,7 +348,7 @@ export const stopPreviewWebcam = (): AppThunk<Promise<void>> => async (
  * This thunk action updates the audio settings in the store,
  * stops the preview audio track, starts/restarts the main audio
  * track and starts/restarts the preview audio track.
- * 
+ *
  * @param settings - Settings.
  * @returns {Promise<void>} Promise.
  */
@@ -361,7 +373,7 @@ export const updateAudioSettings = (
  * This thunk action starts/restarts the main audio track.
  * It will use the MediaService to create the Producer from it
  * which will send it to the server.
- * 
+ *
  * @param options - Options.
  * @returns {Promise<void>} Promise.
  */
@@ -509,7 +521,7 @@ export const resumeMic = (): AppThunk<void> => (
  * This thunk action updates the video settings in the store,
  * stops the preview video track, starts/restarts the main video
  * track and starts/restarts the preview video track.
- * 
+ *
  * @param settings - Settings.
  * @returns {Promise<void>} Promise.
  */
@@ -535,7 +547,7 @@ export const updateVideoSettings = (settings: VideoSettings = {}): AppThunk<Prom
  * This thunk action starts/restarts the main video track.
  * It will use the MediaService to create the Producer from it
  * which will send it to the server.
- * 
+ *
  * @param options - Options.
  * @returns {Promise<void>} Promise.
  */
@@ -566,7 +578,7 @@ export const updateWebcam = ({ newDeviceId }: UpdateDeviceOptions = {}): AppThun
 			selectedVideoDevice,
 			blurEnabled,
 		} = getState().settings;
-		
+
 		const deviceId = deviceService.getDeviceId(selectedVideoDevice, 'videoinput');
 
 		if (!deviceId) logger.warn('no webcam devices');
@@ -582,7 +594,7 @@ export const updateWebcam = ({ newDeviceId }: UpdateDeviceOptions = {}): AppThun
 						frameRate
 					}
 				});
-	
+
 				([ track ] = stream.getVideoTracks());
 			}
 
@@ -610,7 +622,7 @@ export const updateWebcam = ({ newDeviceId }: UpdateDeviceOptions = {}): AppThun
 				await mediaService.mediaSenders['webcam'].replaceTrack(track);
 			} else if (config.simulcast) {
 				const encodings = getEncodings(width, height);
-	
+
 				await mediaService.mediaSenders['webcam'].start({
 					track,
 					zeroRtpOnPause: true,
@@ -661,8 +673,8 @@ export const stopWebcam = (): AppThunk<void> => (
 /**
  * This thunk action updates the screen sharing settings in the store,
  * starts/restarts the screen sharing track.
- * 
- * @param settings 
+ *
+ * @param settings
  * @returns {Promise<void>} Promise.
  */
 export const updateScreenshareSettings = (
@@ -685,7 +697,7 @@ export const updateScreenshareSettings = (
  * This thunk action starts/restarts the main screen sharing track.
  * It will use the MediaService to create the Producer from it
  * which will send it to the server.
- * 
+ *
  * @param options - Options.
  * @returns {Promise<void>} Promise.
  */
@@ -836,7 +848,7 @@ export const stopScreenSharing = (): AppThunk<void> => (
  * This thunk action starts and extra video track.
  * It will use the MediaService to create the Producer from it
  * which will send it to the server.
- * 
+ *
  * @param options - Options.
  * @returns {Promise<void>} Promise.
  */
@@ -865,7 +877,7 @@ export const startExtraVideo = ({ newDeviceId }: UpdateDeviceOptions = {}): AppT
 			frameRate,
 			blurEnabled,
 		} = getState().settings;
-		
+
 		const deviceId = deviceService.getDeviceId(newDeviceId, 'videoinput');
 
 		if (!deviceId) logger.warn('no extravideo device');
@@ -935,3 +947,18 @@ export const stopExtraVideo = (): AppThunk<void> => (
 	mediaService.mediaSenders['extravideo'].stop();
 	dispatch(meActions.setExtraVideoEnabled(false));
 };
+
+async function checkPermissions() {
+	const micPermission = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+	const camPermission = await navigator.permissions.query({ name: 'camera' as PermissionName });
+
+	if (micPermission.state !== 'granted') {
+		logger.debug('⚠️ Mikrofon izni verilmemiş!');
+	}
+
+	if (camPermission.state !== 'granted') {
+		logger.debug('⚠️ Kamera izni verilmemiş!');
+	}
+}
+
+checkPermissions();

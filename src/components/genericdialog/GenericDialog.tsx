@@ -86,10 +86,10 @@ const GenericDialog = ({
 			
 			{infoTooltipEnabled && showFooter && <StyledDialogFooter>
 				<Grid container>
-					<Grid size={12} textAlign={'center'}>
+					<Grid size={12} textAlign={'left'}>
 						{infoTooltipLink!='' ? <Link href={infoTooltipLink}>{ infoTooltipText }</Link> : infoTooltipText }
 					</Grid>
-					{infoTooltipDesc!='' && <Grid size={12} textAlign={'justify'}>
+					{infoTooltipDesc!='' && <Grid size={12} textAlign={'left'}>
 						{ infoTooltipDesc }
 					</Grid>
 					}

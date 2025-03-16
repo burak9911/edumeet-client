@@ -660,7 +660,7 @@ export const setLastNLabel = (): string => intl.formatMessage({
 
 export const backgroundBlurLabel = (): string => intl.formatMessage({
 	id: 'settings.backgroundBlur',
-	defaultMessage: 'Background blur'
+	defaultMessage: 'Arkaplanı bulanıklaştır'
 });
 
 export const videoContainLabel = (): string => intl.formatMessage({

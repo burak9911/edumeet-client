@@ -42,7 +42,7 @@ var config = {
 };
 ```
 An example configuration file with all properties set to default values
-can be found here: [config.example.js](public/config/config.example.js).
+can be found here: [config.js](public/config/config.js).
 
 ### Configuration properties
 

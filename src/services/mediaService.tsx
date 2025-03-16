@@ -18,6 +18,7 @@ import { ProducerSource } from '../utils/types';
 import { MediaSender } from '../utils/mediaSender';
 import { Logger } from '../utils/Logger';
 import edumeetConfig from '../utils/edumeetConfig';
+import { intl } from '../utils/intlManager';
 
 const logger = new Logger('MediaService');
 
@@ -75,26 +76,37 @@ const changeEvent = {
 export declare interface MediaService {
 	// eslint-disable-next-line no-unused-vars
 	on(event: 'consumerCreated', listener: (consumer: Consumer, paused: boolean, producerPaused: boolean, peerConsumer: boolean) => void): this;
+
 	// eslint-disable-next-line no-unused-vars
 	on(event: 'dataConsumerCreated', listener: (dataConsumer: DataConsumer) => void): this;
+
 	// eslint-disable-next-line no-unused-vars
 	on(event: 'consumerClosed', listener: (consumer: Consumer) => void): this;
+
 	// eslint-disable-next-line no-unused-vars
 	on(event: 'dataConsumerClosed', listener: (dataConsumer: DataConsumer) => void): this;
+
 	// eslint-disable-next-line no-unused-vars
 	on(event: 'consumerPaused', listener: (consumer: Consumer) => void): this;
+
 	// eslint-disable-next-line no-unused-vars
 	on(event: 'consumerResumed', listener: (consumer: Consumer) => void): this;
+
 	// eslint-disable-next-line no-unused-vars
 	on(event: 'consumerScore', listener: (consumerId: string, score: number) => void): this;
+
 	// eslint-disable-next-line no-unused-vars
 	on(event: 'mediaClosed', listener: (source: ProducerSource) => void): this;
+
 	// eslint-disable-next-line no-unused-vars
 	on(event: 'transcriptionStarted', listener: () => void): this;
+
 	// eslint-disable-next-line no-unused-vars
 	on(event: 'transcriptionStopped', listener: () => void): this;
+
 	// eslint-disable-next-line no-unused-vars
 	on(event: 'transcript', listener: (transcription: PeerTranscript) => void): this;
+
 	// eslint-disable-next-line no-unused-vars
 	on(event: 'lostMediaServer', listener: () => void): this;
 }
@@ -124,7 +136,7 @@ export class MediaService extends EventEmitter {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	private speechRecognition?: any;
 	private speechRecognitionRunning = false;
-	
+
 	// eslint-disable-next-line no-unused-vars
 	public rejectMediaReady!: (error: Error) => void;
 	public resolveMediaReady!: () => void;
@@ -146,7 +158,7 @@ export class MediaService extends EventEmitter {
 	constructor(
 		{ signalingService }: { signalingService: SignalingService },
 		// eslint-disable-next-line no-unused-vars
-		public readonly monitor?: ClientMonitor,		
+		public readonly monitor?: ClientMonitor,
 	) {
 		super();
 
@@ -186,7 +198,8 @@ export class MediaService extends EventEmitter {
 			this.rejectTransportsReady = reject;
 		}));
 
-		this.createTransports().catch((error) => logger.error('error on creating transports [error:%o]', error));
+		this.createTransports()
+			.catch((error) => logger.error('error on creating transports [error:%o]', error));
 	}
 
 	public close(): void {
@@ -235,7 +248,10 @@ export class MediaService extends EventEmitter {
 
 						this.iceServers = iceServers;
 
-						const { rtpCapabilities, sctpCapabilities } = await this.receiveRouterRtpCapabilities(routerRtpCapabilities);
+						const {
+							rtpCapabilities,
+							sctpCapabilities
+						} = await this.receiveRouterRtpCapabilities(routerRtpCapabilities);
 
 						respond({ rtpCapabilities, sctpCapabilities });
 
@@ -286,7 +302,7 @@ export class MediaService extends EventEmitter {
 						const { peerId, rtpCapabilities } = notification.data;
 
 						const peerDevice = this.getPeerDevice(peerId);
-						
+
 						await peerDevice.load({ remoteRtpCapabilities: rtpCapabilities });
 
 						break;
@@ -306,7 +322,7 @@ export class MediaService extends EventEmitter {
 						const transport = await this.getPeerTransport(peerId, direction === 'send' ? 'recv' : 'send');
 
 						await transport.addIceCandidate({ candidate });
-						
+
 						break;
 					}
 
@@ -497,7 +513,11 @@ export class MediaService extends EventEmitter {
 
 								lastSpatialLayer = spatialLayer;
 
-								this.signalingService.notify('setConsumerPreferredLayers', { consumerId: consumer.id, spatialLayer, temporalLayer });
+								this.signalingService.notify('setConsumerPreferredLayers', {
+									consumerId: consumer.id,
+									spatialLayer,
+									temporalLayer
+								});
 							});
 
 							consumer.appData.resolutionWatcher = resolutionWatcher;
@@ -591,7 +611,7 @@ export class MediaService extends EventEmitter {
 
 							return;
 						}
-	
+
 						this.changeConsumer(consumerId, changeEvent[notification.method] as MediaChange, false);
 
 						break;
@@ -740,7 +760,7 @@ export class MediaService extends EventEmitter {
 
 	public async createTransports(): Promise<void> {
 		await this.mediaReady;
-		
+
 		this.sendTransport = await this.createTransport('createSendTransport');
 		this.recvTransport = await this.createTransport('createRecvTransport');
 
@@ -862,7 +882,7 @@ export class MediaService extends EventEmitter {
 				}
 
 				const monitor = await this.monitor;
-				
+
 				if (monitor)
 					monitor.collectors.addRTCPeerConnection(transport.handler.pc);
 
@@ -928,18 +948,22 @@ export class MediaService extends EventEmitter {
 		});
 
 		this.speechRecognition = new window.webkitSpeechRecognition();
-
 		this.speechRecognition.continuous = true;
 		this.speechRecognition.interimResults = true;
+
+		// Algılanan konuşma dili (farklı olabilir)
+		this.speechRecognition.lang = 'tr-TR'; // Örnek olarak Türkçe alıyor
 
 		let transcriptId = Math.round(Math.random() * 10000000);
 
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		this.speechRecognition.onresult = (event: any) => {
-			logger.debug('speech "onresult" [event:%o]', event);
-
+		this.speechRecognition.onresult = async (event: any) => {
 			let isFinal = false;
 			let speechResult = '';
+
+			const targetLanguage = intl.locale || 'en-US';
+
+			logger.debug(`Güncellenmiş hedef dil: ${targetLanguage}`);
 
 			for (let i = event.resultIndex; i < event.results.length; i++) {
 				if (event.results[i].isFinal)
@@ -947,6 +971,11 @@ export class MediaService extends EventEmitter {
 
 				speechResult += event.results[i][0].transcript;
 			}
+
+			// Konuşmayı seçilen dile çevir
+			const translatedText = await this.translateText(speechResult, targetLanguage);
+
+			this.updateTranscriptUI(translatedText);
 
 			const data = JSON.stringify({
 				method: 'transcript',
@@ -1003,5 +1032,26 @@ export class MediaService extends EventEmitter {
 		this.speechRecognition = undefined;
 
 		this.emit('transcriptionStopped');
+	}
+
+	private updateTranscriptUI(transcript: string): void {
+		const event = new CustomEvent('transcriptUpdate', { detail: transcript });
+
+		window.dispatchEvent(event);
+	}
+
+	private async translateText(text: string, targetLanguage: string): Promise<string> {
+		try {
+			const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLanguage}&dt=t&q=${encodeURIComponent(text)}`);
+			const data = await response.json();
+
+			if (data && data[0] && data[0][0]) {
+				return data[0][0][0]; // Çevrilmiş metni döndür
+			}
+		} catch (error) {
+			logger.error('translateText() | Error translating text: %o', error);
+		}
+
+		return text; // Çeviri başarısız olursa orijinal metni döndür
 	}
 }

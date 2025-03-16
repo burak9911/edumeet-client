@@ -1,4 +1,4 @@
-import { Chip, styled, TextField } from '@mui/material';
+import { Chip, styled, TextField, Box } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { setDisplayName } from '../../store/actions/meActions';
 import { useAppDispatch } from '../../store/hooks';
@@ -20,7 +20,6 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 		paddingTop: 0,
 		paddingBottom: 0,
 	},
-
 }));
 
 const StyledChip = styled(Chip)(({ theme }) => ({
@@ -28,6 +27,9 @@ const StyledChip = styled(Chip)(({ theme }) => ({
 	bottom: theme.spacing(1),
 	left: theme.spacing(1),
 	color: 'white',
+	display: 'flex',
+	alignItems: 'center',
+	flexDirection: 'column',
 }));
 
 interface DisplayNameProps {
@@ -46,8 +48,26 @@ const DisplayName = ({
 	const dispatch = useAppDispatch();
 	const [ value, setValue ] = useState(displayName);
 	const [ isEditing, setIsEditing ] = useState(false);
+	const [ transcript, setTranscript ] = useState('');
+
+	// Tarayıcı dilini al ve ona göre ayarla
+	const browserLanguage = navigator.language;
+
+	browserLanguage.startsWith('tr');
 
 	useEffect(() => setValue(displayName), [ displayName ]);
+
+	useEffect(() => {
+		const handleTranscriptUpdate = (event: CustomEvent) => {
+			setTranscript(event.detail);
+		};
+
+		window.addEventListener('transcriptUpdate', handleTranscriptUpdate as EventListener);
+
+		return () => {
+			window.removeEventListener('transcriptUpdate', handleTranscriptUpdate as EventListener);
+		};
+	}, []);
 
 	const handleFinished = () => {
 		if (value && value !== displayName)
@@ -59,13 +79,13 @@ const DisplayName = ({
 	const prefix = isMe && !isEditing ? `(${meLabel()}) ` : '';
 
 	return (
-		isEditing ?
+		isEditing ? (
 			<StyledTextField
 				value={`${prefix}${value}`}
 				disabled={disabled}
-				margin='dense'
-				variant='filled'
-				size='small'
+				margin="dense"
+				variant="filled"
+				size="small"
 				onFocus={(event) => event.target.select()}
 				onChange={(event) => setValue(event.target.value)}
 				onKeyDown={(event) => {
@@ -73,17 +93,38 @@ const DisplayName = ({
 						handleFinished();
 				}}
 				onBlur={handleFinished}
-				color='primary'
+				color="primary"
 				autoFocus
 			/>
-			:
-			<StyledChip
-				label={`${prefix}${value}`}
-				variant='filled'
-				size='small'
-				onClick={() => !disabled && setIsEditing(true)}
-				avatar={ peerId ? <StateIndicators peerId={peerId} /> : <MeStateIndicators /> }
-			/>
+		) : (
+			<Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+				{/* Transkript metni (Me) Guest'in üstüne gelecek şekilde */}
+				{transcript && (
+					<span style={{
+						position: 'absolute',
+						bottom: '0', // (Me) Guest'in hemen üstüne al
+						fontSize: '14px',
+						color: '#FFD700',
+						fontWeight: 'bold',
+						background: 'rgba(0, 0, 0, 0.5)',
+						padding: '5px',
+						borderRadius: '5px',
+						textAlign: 'center'
+					}}>
+						{transcript}
+					</span>
+				)}
+
+				{/* (Me) Guest Chip */}
+				<StyledChip
+					label={`${prefix}${value}`}
+					variant="filled"
+					size="small"
+					onClick={() => !disabled && setIsEditing(true)}
+					avatar={peerId ? <StateIndicators peerId={peerId}/> : <MeStateIndicators/>}
+				/>
+			</Box>
+		)
 	);
 };
 

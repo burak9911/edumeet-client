@@ -122,7 +122,7 @@ export default function ManagementUI(/* props: Props */) {
 		<div>
 			<List>
 				<ListItem style={{ justifyContent: 'center' }} >
-					<img src='/images/logo.edumeet.svg' alt='logo' />
+					<img src='/images/logo.svg' alt='logo' />
 				</ListItem>
 			
 				<ListItem key={'{username}'} disablePadding onClick={

@@ -77,7 +77,7 @@ const RootComponent = (): React.JSX.Element => {
 	}
 };
 
-const container = document.getElementById('edumeet');
+const container = document.getElementById('craftmeet');
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const root = createRoot(container!);
 

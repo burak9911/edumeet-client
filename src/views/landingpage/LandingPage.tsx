@@ -35,6 +35,9 @@ const LandingPage = (): JSX.Element => {
 							onEnter={onClicked}
 							randomizeOnBlank={randomizeOnBlank}
 							autoFocus
+							InputLabelProps={{
+								style: { lineHeight: '2rem' }
+							}}
 						/>
 					</Container>
 
