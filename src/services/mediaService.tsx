@@ -941,18 +941,48 @@ export class MediaService extends EventEmitter {
 		if (!window.webkitSpeechRecognition) return logger.warn('startTranscription() | SpeechRecognition not supported');
 		if (this.speechRecognitionRunning) return logger.warn('startTranscription() | SpeechRecognition already started');
 
+		// 🔍 1️⃣ Başka kullanıcıların seslerini al
+		const audioConsumers = Array.from(this.consumers.values()).filter((consumer) => consumer.kind === 'audio');
+
+		if (audioConsumers.length === 0) {
+			return logger.warn('startTranscription() | No remote audio sources found');
+		}
+
+		const targetConsumer = audioConsumers.find((consumer) => !consumer.appData.peerConsumer) || audioConsumers[0];
+		const audioTrack = targetConsumer.track;
+
+		if (!audioTrack) {
+			return logger.warn('startTranscription() | Selected audio consumer has no track');
+		}
+
+		logger.debug('🔍 Kullanılacak ses kaynağı:', targetConsumer);
+
+		// 🔊 2️⃣ Web Audio API ile ses kaynağını oluştur
+		const audioContext = new AudioContext();
+		const mediaStream = new MediaStream();
+
+		mediaStream.addTrack(audioTrack);
+
+		const source = audioContext.createMediaStreamSource(mediaStream);
+		const destination = audioContext.createMediaStreamDestination();
+
+		source.connect(destination);
+
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const finalStream = destination.stream;
+
+		// 🔴 3️⃣ WebRTC üzerinden transcription için DataChannel aç
 		const dataProducer = await this.produceData({
 			ordered: false,
 			maxPacketLifeTime: 3000,
 			label: 'transcription',
 		});
 
+		// 🗣️ 4️⃣ SpeechRecognition başlat
 		this.speechRecognition = new window.webkitSpeechRecognition();
 		this.speechRecognition.continuous = true;
 		this.speechRecognition.interimResults = true;
-
-		// Algılanan konuşma dili (farklı olabilir)
-		this.speechRecognition.lang = 'tr-TR'; // Örnek olarak Türkçe alıyor
+		this.speechRecognition.lang = intl.locale || 'en-US';
 
 		let transcriptId = Math.round(Math.random() * 10000000);
 
@@ -963,16 +993,15 @@ export class MediaService extends EventEmitter {
 
 			const targetLanguage = intl.locale || 'en-US';
 
-			logger.debug(`Güncellenmiş hedef dil: ${targetLanguage}`);
+			logger.debug(`🎯 Güncellenmiş hedef dil: ${targetLanguage}`);
 
 			for (let i = event.resultIndex; i < event.results.length; i++) {
-				if (event.results[i].isFinal)
-					isFinal = true;
+				if (event.results[i].isFinal) isFinal = true;
 
 				speechResult += event.results[i][0].transcript;
 			}
 
-			// Konuşmayı seçilen dile çevir
+			// 🔄 5️⃣ Algılanan konuşmayı hedef dile çevir
 			const translatedText = await this.translateText(speechResult, targetLanguage);
 
 			this.updateTranscriptUI(translatedText);
@@ -981,7 +1010,7 @@ export class MediaService extends EventEmitter {
 				method: 'transcript',
 				data: {
 					id: transcriptId,
-					transcript: speechResult,
+					transcript: translatedText, // Çevrilmiş metin
 					done: isFinal
 				}
 			});
@@ -992,33 +1021,35 @@ export class MediaService extends EventEmitter {
 				logger.error('dataProducer error sending message [error:%o]', error);
 			}
 
-			if (isFinal) { // We want to send the transcript now
-				logger.debug('speech final result [transcript:%s]', speechResult);
-
+			if (isFinal) {
+				logger.debug('📜 Son konuşma sonucu:', speechResult);
 				transcriptId = Math.round(Math.random() * 10000000);
-			} else
-				logger.debug('speech interim result [transcript:%s]', speechResult);
+			} else {
+				logger.debug('⏳ Geçici konuşma sonucu:', speechResult);
+			}
 		};
 
 		this.speechRecognition.onend = () => {
-			logger.debug('speech "onend"');
+			logger.debug('🛑 SpeechRecognition durdu.');
 
-			if (this.speechRecognitionRunning)
+			if (this.speechRecognitionRunning) {
 				this.speechRecognition.start();
-			else
+			} else {
 				this.closeDataProducer(dataProducer.id, true);
+			}
 		};
 
 		this.speechRecognition.onerror = (event: Event) => {
-			logger.error('speech "onerror" [event:%o]', event);
+			logger.error('❌ SpeechRecognition hatası:', event);
 
-			if (this.speechRecognitionRunning)
+			if (this.speechRecognitionRunning) {
 				this.speechRecognition.start();
+			}
 		};
 
+		// 🚀 6️⃣ Çeviri sürecini başlat
 		this.speechRecognitionRunning = true;
 		this.speechRecognition.start();
-
 		this.emit('transcriptionStarted');
 	}
 
