@@ -99,7 +99,7 @@ const DisplayName = ({
 		) : (
 			<Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 				{/* Transkript metni (Me) Guest'in üstüne gelecek şekilde */}
-				{transcript && (
+				{isMe && transcript && (
 					<span style={{
 						position: 'absolute',
 						bottom: '0', // (Me) Guest'in hemen üstüne al
