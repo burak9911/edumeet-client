@@ -1,11 +1,12 @@
 import { styled, useTheme } from '@mui/material/styles';
 import { useEffect, useRef, useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
-import { spotlightWebcamConsumerSelector, videoBoxesSelector } from '../../store/selectors';
+import { spotlightWebcamConsumerSelector } from '../../store/selectors';
 import Me from '../me/Me';
 import VideoConsumer from '../videoconsumer/VideoConsumer';
 import Peers from '../peers/Peers';
 import { Box } from '@mui/material';
+import { Peer } from '../../store/slices/peersSlice';
 
 type DemocraticDivProps = {
 	headless: number;
@@ -36,12 +37,14 @@ type DemocraticProps = {
 	windowSize: number;
 	horizontal: boolean;
 	spotlights: boolean;
+	participants: Peer[];
 };
 
 const Democratic = ({
 	windowSize,
 	horizontal,
 	spotlights,
+	participants,
 }: DemocraticProps): JSX.Element => {
 	const theme = useTheme();
 	const peersRef = useRef<HTMLDivElement>(null);
@@ -50,7 +53,7 @@ const Democratic = ({
 	const verticalDivide = useAppSelector((state) => state.settings.verticalDivide);
 	const chatOpen = useAppSelector((state) => state.ui.chatOpen);
 	const participantListOpen = useAppSelector((state) => state.ui.participantListOpen);
-	const boxes = useAppSelector(videoBoxesSelector);
+	const boxes = participants.length + 1;
 	const webcamConsumers = useAppSelector(spotlightWebcamConsumerSelector);
 	const currentSession = useAppSelector((state) => state.me.sessionId);
 	const headless = useAppSelector((state) => state.room.headless);
@@ -121,14 +124,27 @@ const Democratic = ({
 	return (
 		<DemocraticDiv ref={peersRef} headless={headless ? 1 : 0} horizontal={horizontal ? 1 : 0} spotlights={spotlights ? 1 : 0}>
 			<Me style={style} />
-			{ webcamConsumers.map((consumer) => (
-				<VideoConsumer
-					key={consumer.id}
-					consumer={consumer}
-					style={style}
-				/>
-			))}
-			<Peers style={style} />
+
+			{/* 🔥 Katılımcıları döngüye al */}
+			{participants.map((peer) => {
+				const videoConsumer = webcamConsumers.find((consumer) => consumer.peerId === peer.id);
+
+				// Eğer katılımcının kamerası açıksa VideoConsumer ile göster
+				if (videoConsumer) {
+					return (
+						<VideoConsumer
+							key={peer.id}
+							consumer={videoConsumer}
+							style={style}
+						/>
+					);
+				}
+
+				// Kamera kapalıysa Peers bileşeni ile ismini göster
+				return (
+					<Peers key={peer.id} peer={peer} style={style} />
+				);
+			})}
 		</DemocraticDiv>
 	);
 };

@@ -26,8 +26,11 @@ const LastNSlider = (): JSX.Element => {
 	): void => {
 		const realLastN = (value as number) - 1; // LastN doesn't count the local user
 
-		if (sliderValue !== realLastN)
+		if (sliderValue !== realLastN) {
 			dispatch(settingsActions.setMaxActiveVideos(realLastN));
+			// 🔥 Yeni değer seçildiğinde sayfayı sıfırla!
+			dispatch(settingsActions.setCurrentPage(0));
+		}
 	};
 
 	return (

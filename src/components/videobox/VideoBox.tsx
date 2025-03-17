@@ -45,8 +45,8 @@ const StyledVideoBox = styled(Box)<StyledVideoBoxProps>(({
 	boxShadow: theme.shadows[10],
 	backgroundColor: theme.videoBackroundColor,
 	backgroundImage: `url(${theme.videoAvatarImage})`,
-	backgroundPosition: 'bottom',
-	backgroundSize: 'auto 85%',
+	backgroundPosition: 'center',
+	backgroundSize: 'auto 50%',
 	backgroundRepeat: 'no-repeat',
 	borderRadius: roundedcorners ? theme.roundedness : '0',
 }));

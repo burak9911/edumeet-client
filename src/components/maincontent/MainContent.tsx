@@ -1,13 +1,17 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { styled } from '@mui/material/styles';
-import { Box, Paper } from '@mui/material';
+import { Box, Paper, Button } from '@mui/material';
 import ParticipantList from '../participantlist/ParticipantList';
 import Democratic from '../democratic/Democratic';
 import Chat from '../chat/Chat';
-import { useAppSelector } from '../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import { settingsActions } from '../../store/slices/settingsSlice';
 import { isMobileSelector, selectedVideoBoxesSelector, videoBoxesSelector } from '../../store/selectors';
 import Spotlights from '../spotlights/Spotlights';
 import ControlButtonsBar from '../controlbuttonsbar/ControlButtonsBar';
+
+// 🔥 Katılımcıları Redux state'inden almak için
+import { peersArraySelector } from '../../store/selectors';
 
 type WrapperContainerProps = {
 	headless: number;
@@ -19,6 +23,7 @@ const WrapperContainer = styled(Box)<WrapperContainerProps>(({ theme, headless }
 	display: 'flex',
 	justifyContent: 'center',
 	alignItems: 'center',
+	position: 'relative',
 	marginLeft: theme.spacing(0.5),
 	marginRight: theme.spacing(0.5),
 	marginBottom: theme.spacing(0.5),
@@ -69,7 +74,25 @@ const SideContainer = styled(Paper)<SideContainerProps>(({ theme, height, width 
 	backgroundColor: theme.sideContainerBackgroundColor,
 }));
 
+// 🔹 Sayfalama butonları için stiller
+const PageButton = styled(Button)({
+	position: 'absolute',
+	top: '50%',
+	transform: 'translateY(-50%)',
+	zIndex: 10,
+	background: '#1d2277',
+	color: '#fff',
+	fontSize: '1rem',
+	borderRadius: '50%',
+	width: '40px',
+	height: '40px',
+	boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+	minWidth: 'unset',
+	padding: 0,
+});
+
 const MainContent = (): JSX.Element => {
+	const dispatch = useAppDispatch();
 	const [ windowSize, setWindowSize ] = useState(0);
 	const [ horizontal, setHorizontal ] = useState(true);
 
@@ -86,7 +109,16 @@ const MainContent = (): JSX.Element => {
 	const spotlightsVisible = useAppSelector(selectedVideoBoxesSelector) > 0;
 	const videosVisible = useAppSelector(videoBoxesSelector) > 0;
 
-	const height = (chatOpen && participantListOpen) && verticalDivide ? '50%' : '100%';
+	// 🔥 Yeni eklenen state değerleri
+	const maxActiveVideos = useAppSelector((state) => state.settings.maxActiveVideos);
+	const currentPage = useAppSelector((state) => state.settings.currentPage);
+
+	// 🔥 Katılımcıları Redux state'inden al
+	const participants = useAppSelector(peersArraySelector);
+
+	// 🔥 Katılımcıları sayfalara böl
+	const totalPages = Math.ceil(participants.length / maxActiveVideos);
+	const visibleParticipants = participants.slice(currentPage * maxActiveVideos, (currentPage + 1) * maxActiveVideos);
 
 	useEffect(() => {
 		if (!mainContainer.current) return;
@@ -118,15 +150,37 @@ const MainContent = (): JSX.Element => {
 			<ControlButtonsBar />
 			<MainContainer horizontal={horizontal ? 1 : 0} >
 				{ spotlightsVisible && <Spotlights windowSize={windowSize} horizontal={horizontal} videos={videosVisible} /> }
-				{ videosVisible && <Democratic windowSize={windowSize} horizontal={spotlightsVisible && horizontal} spotlights={spotlightsVisible} /> }
+				{ videosVisible && (
+					<Democratic
+						participants={visibleParticipants} // 🔥 Yalnızca o sayfadaki katılımcılar
+						windowSize={windowSize}
+						horizontal={spotlightsVisible && horizontal}
+						spotlights={spotlightsVisible}
+					/>
+				)}
 			</MainContainer>
+
+			{/* ◀ Sayfa Geri Butonu */}
+			{ currentPage > 0 && (
+				<PageButton style={{ left: 10 }} onClick={() => dispatch(settingsActions.setCurrentPage(currentPage - 1))}>
+					◀
+				</PageButton>
+			)}
+
+			{/* ▶ Sayfa İleri Butonu */}
+			{ currentPage < totalPages - 1 && (
+				<PageButton style={{ right: 10 }} onClick={() => dispatch(settingsActions.setCurrentPage(currentPage + 1))}>
+					▶
+				</PageButton>
+			)}
+
 			{ !isMobile && eitherOpen &&
 				<SideContent
 					verticaldivide={verticalDivide ? 1 : 0}
 					bothopen={bothOpen ? 1 : 0}
 				>
-					{ participantListOpen && <SideContainer height={height} width='100%'><ParticipantList /></SideContainer> }
-					{ chatOpen && <SideContainer height={height} width='100%'><Chat /></SideContainer> }
+					{ participantListOpen && <SideContainer height='100%' width='100%'><ParticipantList /></SideContainer> }
+					{ chatOpen && <SideContainer height='100%' width='100%'><Chat /></SideContainer> }
 				</SideContent>
 			}
 		</WrapperContainer>
