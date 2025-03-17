@@ -91,6 +91,7 @@ export const defaultEdumeetConfig: EdumeetConfig = {
 	transcriptionEnabled: true,
 	theme: {
 		background: 'linear-gradient(90deg, rgba(51,63,220,1) 0%, rgba(51,63,220,1) 100%)',
+		backgroundImage: 'images/buddy.svg',
 		appBarColor: 'rgba(0, 0, 0, 0.4)',
 		appBarFloating: true,
 		logo: 'images/logo.svg',

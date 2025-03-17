@@ -62,7 +62,7 @@ const createRoomMiddleware = ({
 									raiseHandEnabled,
 									localRecordingEnabled,
 									logo: settings.logo,
-									backgroundImage: settings.background,
+									backgroundImage: settings.backgroundImage,
 									videoCodec: settings.videoCodec ?? 'vp8',
 									simulcast: settings.simulcast ?? true,
 									audioCodec: settings.audioCodec ?? 'opus',
@@ -97,7 +97,7 @@ const createRoomMiddleware = ({
 									localRecordingEnabled,
 									breakoutsEnabled,
 									logo: settings.logo,
-									backgroundImage: settings.background,
+									backgroundImage: settings.backgroundImage,
 									videoCodec: settings.videoCodec ?? 'vp8',
 									simulcast: settings.simulcast ?? true,
 									audioCodec: settings.audioCodec ?? 'opus',
@@ -114,7 +114,7 @@ const createRoomMiddleware = ({
 						case 'enteredLobby': {
 							batch(() => {
 								dispatch(roomActions.setState('lobby'));
-								dispatch(setDisplayName(getState().settings.displayName ?? 'Guest'));
+								dispatch(setDisplayName(getState().settings.displayName ?? 'Misafir'));
 								dispatch(setPicture(getState().me.picture ?? ''));
 							});
 							break;

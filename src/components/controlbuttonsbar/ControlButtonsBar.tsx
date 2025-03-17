@@ -1,5 +1,4 @@
 import { useAppSelector } from '../../store/hooks';
-import MediaControls from '../../components/mediacontrols/MediaControls';
 import MicButton from '../../components/controlbuttons/MicButton';
 import WebcamButton from '../../components/controlbuttons/WebcamButton';
 import ScreenshareButton from '../../components/controlbuttons/ScreenshareButton';
@@ -18,16 +17,29 @@ import Filesharing from '../menuitems/Filesharing';
 import Recording from '../menuitems/Recording';
 import MoreButton from '../controlbuttons/MoreButton';
 
-interface ContainerProps {
-	height: string;
-	width?: string;
-}
-
-const Container = styled(Box)<ContainerProps>(({ height, width }) => ({
-	height,
-	width,
-	overflowY: 'auto',
+const StyledControlBar = styled(Box)(() => ({
+	position: 'fixed',
+	bottom: '15px', // Sayfanın altına biraz daha yaklaştı
+	left: '50%',
+	transform: 'translateX(-50%)',
+	display: 'flex',
+	alignItems: 'center',
+	justifyContent: 'space-around', // Butonları eşit aralıklarla dizer
+	backgroundColor: '#f2f2f2', // Arka plan rengi
+	borderRadius: '40px', // Köşeleri yuvarlak yapar
+	padding: '6px 16px', // İç boşluklar biraz azaldı
+	boxShadow: '0px 3px 8px rgba(0, 0, 0, 0.2)', // Hafif gölge
+	zIndex: 1000,
+	width: '320px', // Kapsayıcıyı küçülttük (önceki 400px idi)
+	height: '50px', // Kapsayıcı yüksekliği küçüldü (önceki 60px idi)
 }));
+
+const SmallButtonWrapper = styled(Box)({
+	transform: 'scale(0.8)', // **Butonları %80 küçülttük**
+	display: 'flex',
+	alignItems: 'center',
+	justifyContent: 'center',
+});
 
 const ControlButtonsBar = (): JSX.Element => {
 	const isMobile = useAppSelector(isMobileSelector);
@@ -39,41 +51,59 @@ const ControlButtonsBar = (): JSX.Element => {
 
 	const [ participantListAnchorEl, setParticipantAnchorEl ] = useState<HTMLElement | null>();
 	const isParticipantListOpen = Boolean(participantListAnchorEl);
-
 	const handleParticipantListClose = () => setParticipantAnchorEl(null);
 
 	const [ chatAnchorEl, setChatAnchorEl ] = useState<HTMLElement | null>();
 	const isChatOpen = Boolean(chatAnchorEl);
-
 	const handleChatClose = () => setChatAnchorEl(null);
 
 	const [ moreAnchorEl, setMoreAnchorEl ] = useState<HTMLElement | null>();
-
 	const handleMoreClose = () => {
 		setMoreAnchorEl(null);
 	};
-
 	const isMoreOpen = Boolean(moreAnchorEl);
 
 	return (
 		<>
-			<MediaControls
-				orientation='horizontal'
-				horizontalPlacement='center'
-				verticalPlacement='bottom'
-				autoHide={ false }
-				fullsize={ false }
-			>
-				<MicButton offColor='error' toolTipLocation='bottom' />
-				<WebcamButton offColor='error' toolTipLocation='bottom' />
-				{ !isMobile && <ScreenshareButton toolTipLocation='bottom' /> }
-				{ !isMobile && <ParticipantsButton toolTipLocation='bottom' onColor='primary' /> }
-				{ isMobile && <ParticipantsButton onClick={(event) => setParticipantAnchorEl(event.currentTarget)} toolTipLocation='bottom' /> }
-				{ !isMobile && chatEnabled && <ChatButton toolTipLocation='bottom' onColor='primary' /> }
-				{ isMobile && chatEnabled && <ChatButton onClick={(event) => setChatAnchorEl(event.currentTarget)} toolTipLocation='bottom' /> }
-				<MoreButton onClick={(event) => setMoreAnchorEl(event.currentTarget)} toolTipLocation='bottom' />
-			</MediaControls>
-			{ isMobile &&
+			{/* 📌 Küçültülmüş butonları içeren kapsayıcı */}
+			<StyledControlBar>
+				<SmallButtonWrapper>
+					<MicButton offColor="error" toolTipLocation="bottom" />
+				</SmallButtonWrapper>
+				<SmallButtonWrapper>
+					<WebcamButton offColor="error" toolTipLocation="bottom" />
+				</SmallButtonWrapper>
+				{!isMobile && (
+					<SmallButtonWrapper>
+						<ScreenshareButton toolTipLocation="bottom" />
+					</SmallButtonWrapper>
+				)}
+				{!isMobile && (
+					<SmallButtonWrapper>
+						<ParticipantsButton toolTipLocation="bottom" onColor="primary" />
+					</SmallButtonWrapper>
+				)}
+				{isMobile && (
+					<SmallButtonWrapper>
+						<ParticipantsButton onClick={(event) => setParticipantAnchorEl(event.currentTarget)} toolTipLocation="bottom" />
+					</SmallButtonWrapper>
+				)}
+				{!isMobile && chatEnabled && (
+					<SmallButtonWrapper>
+						<ChatButton toolTipLocation="bottom" onColor="primary" />
+					</SmallButtonWrapper>
+				)}
+				{isMobile && chatEnabled && (
+					<SmallButtonWrapper>
+						<ChatButton onClick={(event) => setChatAnchorEl(event.currentTarget)} toolTipLocation="bottom" />
+					</SmallButtonWrapper>
+				)}
+				<SmallButtonWrapper>
+					<MoreButton onClick={(event) => setMoreAnchorEl(event.currentTarget)} toolTipLocation="bottom" />
+				</SmallButtonWrapper>
+			</StyledControlBar>
+
+			{isMobile && (
 				<FloatingMenu
 					anchorEl={participantListAnchorEl}
 					open={isParticipantListOpen}
@@ -81,12 +111,12 @@ const ControlButtonsBar = (): JSX.Element => {
 					anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
 					transformOrigin={{ vertical: 'bottom', horizontal: 'center' }}
 				>
-					<Container height='80vh' width='90vw'>
+					<Box height="80vh" width="90vw">
 						<ParticipantList />
-					</Container>
+					</Box>
 				</FloatingMenu>
-			}
-			{ chatEnabled && isMobile &&
+			)}
+			{chatEnabled && isMobile && (
 				<FloatingMenu
 					anchorEl={chatAnchorEl}
 					open={isChatOpen}
@@ -94,11 +124,11 @@ const ControlButtonsBar = (): JSX.Element => {
 					anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
 					transformOrigin={{ vertical: 'bottom', horizontal: 'center' }}
 				>
-					<Container height='80vh' width='90vw'>
+					<Box height="80vh" width="90vw">
 						<Chat />
-					</Container>
+					</Box>
 				</FloatingMenu>
-			}
+			)}
 			<FloatingMenu
 				anchorEl={moreAnchorEl}
 				open={isMoreOpen}
@@ -107,10 +137,9 @@ const ControlButtonsBar = (): JSX.Element => {
 				transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
 			>
 				<ExtraVideo onClick={handleMoreClose} />
-				{ /* <ExtraAudio onClick={handleMoreClose} /> */ }
-				{ filesharingEnabled && <Filesharing onClick={handleMoreClose} /> }
-				{ canTranscribe && <Transcription onClick={handleMoreClose} /> }
-				{ localRecordingEnabled && canRecord && <Recording onClick={handleMoreClose} /> }
+				{filesharingEnabled && <Filesharing onClick={handleMoreClose} />}
+				{canTranscribe && <Transcription onClick={handleMoreClose} />}
+				{localRecordingEnabled && canRecord && <Recording onClick={handleMoreClose} />}
 			</FloatingMenu>
 		</>
 	);

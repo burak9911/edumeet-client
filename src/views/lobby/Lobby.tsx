@@ -29,7 +29,7 @@ const Lobby = (): React.JSX.Element => {
 
 	const handleDisplayNameChange = () => {
 		dispatch(setDisplayName(
-			(localDisplayName?.trim() ? localDisplayName : localDisplayName?.trim()) ?? 'Guest'
+			(localDisplayName?.trim() ? localDisplayName : localDisplayName?.trim()) ?? 'Misafir'
 		));
 	};
 
@@ -48,7 +48,7 @@ const Lobby = (): React.JSX.Element => {
 					<ChooserDiv>
 						<TextInputField
 							label={yourNameLabel()}
-							value={localDisplayName ?? 'Guest'}
+							value={localDisplayName ?? 'Misafir'}
 							setValue={setLocalDisplayName}
 							startAdornment={<AccountCircle />}
 							onBlur={handleDisplayNameChange}

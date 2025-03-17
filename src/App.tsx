@@ -36,7 +36,7 @@ const SnackbarCloseButton = ({
 };
 
 const App = (): JSX.Element => {
-	const backgroundImage = useAppSelector((state) => state.room.backgroundImage);
+	const backgroundImage = 'images/background.jpg';
 	const dispatch = useAppDispatch();
 	const roomState = useAppSelector((state) => state.room.state);
 	const id = (useParams<AppParams>() as AppParams).id.toLowerCase();

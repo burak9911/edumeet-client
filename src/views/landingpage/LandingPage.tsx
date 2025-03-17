@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Container, Box, Link, Typography } from '@mui/material';
-import randomString from 'random-string';
 import TextInputField from '../../components/textinputfield/TextInputField';
 import { joinLabel, roomNameLabel, imprintLabel, privacyLabel } from '../../components/translated/translatedComponents';
 import GenericDialog from '../../components/genericdialog/GenericDialog';
@@ -10,10 +9,22 @@ import PrecallTitle from '../../components/precalltitle/PrecallTitle';
 import { QRCode } from 'react-qrcode-logo';
 import edumeetConfig from '../../utils/edumeetConfig';
 
+const generateRandomRoomId = () => {
+	const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+
+	const getRandomSegment = () => {
+		return Array.from({ length: 3 }, () =>
+			characters[Math.floor(Math.random() * characters.length)]
+		).join('');
+	};
+
+	return `${getRandomSegment()}-${getRandomSegment()}-${getRandomSegment()}`;
+};
+
 const LandingPage = (): JSX.Element => {
 	const navigate = useNavigate();
 	const randomizeOnBlank = edumeetConfig.randomizeOnBlank;
-	const [ roomId, setRoomId ] = useState(randomizeOnBlank ? randomString({ length: 8 }).toLowerCase() : '');
+	const [ roomId, setRoomId ] = useState(randomizeOnBlank ? generateRandomRoomId() : '');
 	const onClicked = () => navigate(`/${roomId}`);
 
 	const privacyUrl = edumeetConfig.privacyUrl ?? '';

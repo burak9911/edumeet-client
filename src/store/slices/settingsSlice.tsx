@@ -42,7 +42,7 @@ export interface SettingsState {
 type SettingsUpdate = Partial<SettingsState>;
 
 const initialState: SettingsState = {
-	displayName: 'Guest',
+	displayName: 'Misafir',
 	mirroredSelfView: true,
 	resolution: edumeetConfig.resolution,
 	frameRate: edumeetConfig.frameRate,
