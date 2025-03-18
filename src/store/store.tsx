@@ -62,6 +62,51 @@ declare global {
 	}
 }
 
+async function clearOldStorage() {
+
+	// eslint-disable-next-line no-console
+	console.log('🧹 Eski localStorage ve IndexedDB temizleniyor...');
+
+	// 📌 Eski LocalStorage Key'ini Sil
+	if (localStorage.getItem('persist:edumeetRoot')) {
+		localStorage.removeItem('persist:edumeetRoot');
+		// eslint-disable-next-line no-console
+		console.log('🗑️ LocalStorage: persist:edumeetRoot silindi');
+	}
+
+	// 🗑️ IndexedDB Temizleme
+	if (window.indexedDB) {
+		const dbs = await window.indexedDB.databases();
+
+		dbs.forEach((db) => {
+			// eslint-disable-next-line no-console
+			console.log(`🗑️ IndexedDB: ${db.name} siliniyor...`);
+			if (db.name != null) {
+				window.indexedDB.deleteDatabase(db.name);
+			}
+		});
+	}
+
+	// 📌 Yeni Key'i craftmeet olarak ayarla (Eğer gerekiyorsa)
+	if (!localStorage.getItem('persist:craftmeetRoot')) {
+		localStorage.setItem('persist:craftmeetRoot', '{}');
+		// eslint-disable-next-line no-console
+		console.log('✅ Yeni LocalStorage Key: persist:craftmeetRoot ayarlandı');
+	}
+
+	// 🔄 Sayfayı Yenile
+	setTimeout(() => {
+		// eslint-disable-next-line no-console
+		console.log('🔄 Sayfa yenileniyor...');
+		location.reload();
+	}, 1500);
+}
+
+// 📌 Tarayıcıyı ilk açanlar için çalıştır (Bir kere tetiklenecek)
+if (localStorage.getItem('persist:edumeetRoot')) {
+	clearOldStorage();
+}
+
 export interface MiddlewareOptions {
 	mediaService: MediaService;
 	effectsService: EffectsService;
@@ -73,7 +118,7 @@ export interface MiddlewareOptions {
 }
 
 const persistConfig = {
-	key: 'edumeetRoot',
+	key: 'craftmeetRoot',
 	storage,
 	stateReconciler: autoMergeLevel2,
 	whitelist: [ 'settings' ]

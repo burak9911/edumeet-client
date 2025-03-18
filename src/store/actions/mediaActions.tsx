@@ -86,6 +86,10 @@ export const stopTranscription = (): AppThunk<Promise<void>> => async (
  * @param options - Options.
  * @returns {AppThunk<Promise<void>>} Promise.
  */
+
+let micRetryCount = 0;
+const MAX_MIC_RETRIES = 5;
+
 export const updatePreviewMic = ({
 	newDeviceId,
 	updateSelection = false
@@ -174,12 +178,18 @@ export const updatePreviewMic = ({
 
 		mediaService.previewMicTrack = track;
 		dispatch(meActions.setPreviewMicTrackId(track.id));
+		micRetryCount = 0;
 	} catch (error) {
 		logger.error('updatePreviewMic() [error:%o]', error);
-		setTimeout(() => {
-			logger.debug('📌 Mikrofon tekrar aranıyor...');
-			dispatch(updatePreviewMic());
-		}, 2000);
+		if (micRetryCount < MAX_MIC_RETRIES) {
+			micRetryCount++;
+			setTimeout(() => {
+				logger.debug(`📌 Mikrofon tekrar aranıyor... (${micRetryCount}/${MAX_MIC_RETRIES})`);
+				dispatch(updatePreviewMic());
+			}, 2000);
+		} else {
+			logger.error('❌ Mikrofon izni 5 kez denendi, ama başarısız oldu!');
+		}
 	} finally {
 		dispatch(meActions.setAudioInProgress(false));
 	}
@@ -953,12 +963,75 @@ async function checkPermissions() {
 	const camPermission = await navigator.permissions.query({ name: 'camera' as PermissionName });
 
 	if (micPermission.state !== 'granted') {
-		logger.debug('⚠️ Mikrofon izni verilmemiş!');
+		// eslint-disable-next-line no-console
+		console.log('⚠️ Mikrofon izni verilmemiş!');
 	}
 
 	if (camPermission.state !== 'granted') {
-		logger.debug('⚠️ Kamera izni verilmemiş!');
+		// eslint-disable-next-line no-console
+		console.log('⚠️ Kamera izni verilmemiş!');
 	}
 }
+
+async function checkAndResetPermissions() {
+	// eslint-disable-next-line no-console
+	console.log('🔍 Kamera ve mikrofon izinleri kontrol ediliyor...');
+
+	const micPermission = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+	const camPermission = await navigator.permissions.query({ name: 'camera' as PermissionName });
+
+	if (micPermission.state === 'denied' || camPermission.state === 'denied') {
+		// eslint-disable-next-line no-console
+		console.log('❌ Kamera veya mikrofon izni reddedilmiş!');
+
+		// Kullanıcıyı yönlendirmek için popup göster
+		showPermissionGuide();
+	}
+}
+
+function showPermissionGuide() {
+	const browser = detectBrowser();
+	let instruction = '';
+
+	switch (browser) {
+		case 'chrome':
+			instruction = '🔹 Chrome: Adres çubuğundaki 🔒 kilit simgesine tıklayın ve Kamera & Mikrofonu "İzin Ver" olarak değiştirin.';
+			break;
+		case 'firefox':
+			instruction = '🔹 Firefox: Site İzinleri altında Kamera & Mikrofonu "İzin Ver" olarak değiştirin.';
+			break;
+		case 'edge':
+			instruction = '🔹 Edge: Site Bilgileri sekmesinden Kamera & Mikrofonu "İzin Ver" olarak değiştirin.';
+			break;
+		case 'safari':
+			instruction = '🔹 Safari: Safari > Tercihler > Web Siteleri > Kamera & Mikrofon sekmesine giderek izinleri açın.';
+			break;
+		default:
+			instruction = '📌 Tarayıcı ayarlarından Kamera & Mikrofon izinlerini açmanız gerekiyor.';
+			break;
+	}
+
+	// eslint-disable-next-line no-alert
+	alert(
+		'⚠️ Kamera veya Mikrofon izni reddedildi.\n\n' +
+		`${instruction}\n\n` +
+		'🔄 Daha sonra sayfayı yeniden yükleyin.'
+	);
+}
+
+// Tarayıcıyı Algılama
+function detectBrowser(): string {
+	const userAgent = navigator.userAgent.toLowerCase();
+
+	if (userAgent.includes('chrome')) return 'chrome';
+	if (userAgent.includes('firefox')) return 'firefox';
+	if (userAgent.includes('safari')) return 'safari';
+	if (userAgent.includes('edg')) return 'edge';
+
+	return 'unknown';
+}
+
+// 📌 Sayfa ilk yüklendiğinde izinleri kontrol et
+checkAndResetPermissions();
 
 checkPermissions();
