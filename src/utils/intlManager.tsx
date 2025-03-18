@@ -10,6 +10,11 @@ export interface ILocale {
 
 export const localeList = [
 	{
+		name: 'Türkçe',
+		file: 'tr',
+		locale: [ 'tr', 'tr-tr' ]
+	},
+	{
 		name: 'English',
 		file: 'en',
 		locale: [ 'en', 'en-en' ]
@@ -18,11 +23,6 @@ export const localeList = [
 		name: 'Español',
 		file: 'es',
 		locale: [ 'es', 'es-es' ]
-	},
-	{
-		name: 'Türkçe',
-		file: 'tr',
-		locale: [ 'tr', 'tr-tr' ]
 	}
 ];
 
