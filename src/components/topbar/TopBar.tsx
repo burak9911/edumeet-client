@@ -157,7 +157,19 @@ const TopBar = ({ fullscreenEnabled, fullscreen, onFullscreen }: TopBarProps): R
 
 	const menuItems = <>{ fullscreenEnabled && <FullscreenButton type='iconbutton' fullscreen={fullscreen} onClick={onFullscreen} /> }
 		{ canLock && <LockButton type='iconbutton' /> }
-		{ canPromote && lobbyPeersLength > 0 && <LobbyButton type='iconbutton' /> }</>;
+		{ canPromote && lobbyPeersLength > 0 && <LobbyButton type='iconbutton' /> }
+		<Hidden smUp>
+			<Tooltip title="Toplantı başlığını düzenle">
+				<IconButton onClick={handleEditClick} sx={{ color: 'white' }}>
+					<EditIcon />
+				</IconButton>
+			</Tooltip>
+			<Tooltip title="Toplantı bağlantısını kopyala">
+				<IconButton onClick={handleCopyLink} sx={{ color: 'white' }}>
+					<ContentCopyIcon />
+				</IconButton>
+			</Tooltip>
+		</Hidden> </>;
 
 	/* { loginEnabled && (loggedIn ? <LogoutButton type='iconbutton' /> : <LoginButton type='iconbutton' />) } </>;*/
 
@@ -176,39 +188,42 @@ const TopBar = ({ fullscreenEnabled, fullscreen, onFullscreen }: TopBarProps): R
 					}
 				</TopBarDiv>
 				{/* **Başlık ve Düzenleme Butonu** */}
+
 				<TopBarDiv grow={1} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-					{isEditing ? (
-						<TextField
-							variant="standard"
-							autoFocus
-							value={meetingTitle}
-							onChange={handleTitleChange}
-							onBlur={handleTitleBlur}
-							inputProps={{
-								style: {
-									textAlign: 'center',
-									fontSize: '15px',
-									color: 'white',
-									background: 'transparent',
-									border: 'none'
-								}
-							}}
-						/>
-					) : (
-						meetingTitle && (
-							<Typography
-								variant="h6"
-								color="inherit"
-								style={{ cursor: 'pointer', fontSize: '15px' }}
-							>
-								{meetingTitle}
-							</Typography>
-						)
-					)}
+					<Hidden smDown>
+						{isEditing ? (
+							<TextField
+								variant="standard"
+								autoFocus
+								value={meetingTitle}
+								onChange={handleTitleChange}
+								onBlur={handleTitleBlur}
+								inputProps={{
+									style: {
+										textAlign: 'center',
+										fontSize: '15px',
+										color: 'white',
+										background: 'transparent',
+										border: 'none'
+									}
+								}}
+							/>
+						) : (
+							meetingTitle && (
+								<Typography
+									variant="h6"
+									color="inherit"
+									style={{ cursor: 'pointer', fontSize: '15px' }}
+								>
+									{meetingTitle}
+								</Typography>
+							)
+						)}
 
-					{/* **Düzenleme Butonu** */}
-
+						{/* **Düzenleme Butonu** */}
+					</Hidden>
 				</TopBarDiv>
+
 				<TopBarDiv marginRight={1}>
 					{ someoneIsRecording && <RecordIcon color='error' /> }
 					<Hidden smUp>
@@ -216,11 +231,18 @@ const TopBar = ({ fullscreenEnabled, fullscreen, onFullscreen }: TopBarProps): R
 							<MoreIcon />
 						</ControlButton>
 					</Hidden>
-					<Tooltip title="Toplantı başlığını düzenle">
-						<IconButton onClick={handleEditClick} sx={{ color: 'white' }}>
-							<EditIcon />
-						</IconButton>
-					</Tooltip>
+					<Hidden smDown>
+						<Tooltip title="Toplantı başlığını düzenle">
+							<IconButton onClick={handleEditClick} sx={{ color: 'white' }}>
+								<EditIcon/>
+							</IconButton>
+						</Tooltip>
+						<Tooltip title="Toplantı bağlantısını kopyala">
+							<IconButton size="small" onClick={handleCopyLink} sx={{ color: 'white' }}>
+								<ContentCopyIcon/>
+							</IconButton>
+						</Tooltip>
+					</Hidden>
 					<Popover
 						id={id}
 						open={open && isSm}
@@ -249,11 +271,6 @@ const TopBar = ({ fullscreenEnabled, fullscreen, onFullscreen }: TopBarProps): R
 						{menuItems}
 					</Hidden>
 				</TopBarDiv>
-				<Tooltip title="Toplantı bağlantısını kopyala">
-					<IconButton size='small' onClick={handleCopyLink} sx={{ color: 'white' }}>
-						<ContentCopyIcon />
-					</IconButton>
-				</Tooltip>
 				<TopBarDiv marginRight={1}>
 					<StyledChip size='small' label={ formatDuration(meetingDuration) } />
 				</TopBarDiv>
