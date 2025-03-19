@@ -1,4 +1,15 @@
-import { AppBar, Box, Chip, Hidden, Popover, Toolbar, Typography, useMediaQuery } from '@mui/material';
+import {
+	AppBar,
+	Box,
+	Chip,
+	Hidden,
+	IconButton,
+	Popover, TextField,
+	Toolbar,
+	Tooltip,
+	Typography,
+	useMediaQuery
+} from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
 import { useAppSelector, usePermissionSelector } from '../../store/hooks';
@@ -8,15 +19,13 @@ import { permissions } from '../../utils/roles';
 import LobbyButton from '../controlbuttons/LobbyButton';
 import LockButton from '../controlbuttons/LockButton';
 import FullscreenButton from '../controlbuttons/FullscreenButton';
-import LoginButton from '../controlbuttons/LoginButton';
-import SettingsButton from '../controlbuttons/SettingsButton';
-import LeaveButton from '../textbuttons/LeaveButton';
 import { formatDuration } from '../../utils/formatDuration';
-import LogoutButton from '../controlbuttons/LogoutButton';
 import RecordIcon from '../recordicon/RecordIcon';
 import CountdownTimerChip from '../countdowntimer/CountdownTimerChip';
 import MoreIcon from '@mui/icons-material/MoreVert';
 import ControlButton from '../controlbuttons/ControlButton';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import EditIcon from '@mui/icons-material/Edit';
 
 interface TopBarProps {
 	fullscreenEnabled: boolean;
@@ -80,12 +89,31 @@ const TopBar = ({ fullscreenEnabled, fullscreen, onFullscreen }: TopBarProps): R
 	const logo = useAppSelector((state) => state.room.logo);
 	const canLock = usePermissionSelector(permissions.CHANGE_ROOM_LOCK);
 	const canPromote = usePermissionSelector(permissions.PROMOTE_PEER);
-	const loginEnabled = useAppSelector((state) => state.permissions.loginEnabled);
+	// const loginEnabled = useAppSelector((state) => state.permissions.loginEnabled);
 	const lobbyPeersLength = useAppSelector(lobbyPeersLengthSelector);
 	const roomCreationTimestamp = useAppSelector(roomSessionCreationTimestampSelector);
 	const [ meetingDuration, setMeetingDuration ] = useState<number>(0);
-	const loggedIn = useAppSelector((state) => state.permissions.loggedIn);
+	// const loggedIn = useAppSelector((state) => state.permissions.loggedIn);
 	const someoneIsRecording = useAppSelector(someoneIsRecordingSelector);
+
+	const [ meetingTitle, setMeetingTitle ] = useState<string>('');
+	const [ isEditing, setIsEditing ] = useState<boolean>(false);
+
+	const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setMeetingTitle(event.target.value);
+	};
+
+	const handleTitleBlur = () => {
+		setIsEditing(false);
+	};
+
+	const handleEditClick = () => {
+		setIsEditing(true);
+	};
+
+	const handleCopyLink = () => {
+		navigator.clipboard.writeText(window.location.href);
+	};
 
 	useEffect(() => {
 		if (roomCreationTimestamp) {
@@ -128,10 +156,10 @@ const TopBar = ({ fullscreenEnabled, fullscreen, onFullscreen }: TopBarProps): R
 	};
 
 	const menuItems = <>{ fullscreenEnabled && <FullscreenButton type='iconbutton' fullscreen={fullscreen} onClick={onFullscreen} /> }
-		<SettingsButton type='iconbutton' />
 		{ canLock && <LockButton type='iconbutton' /> }
-		{ canPromote && lobbyPeersLength > 0 && <LobbyButton type='iconbutton' /> }
-		{ loginEnabled && (loggedIn ? <LogoutButton type='iconbutton' /> : <LoginButton type='iconbutton' />) }</>;
+		{ canPromote && lobbyPeersLength > 0 && <LobbyButton type='iconbutton' /> }</>;
+
+	/* { loginEnabled && (loggedIn ? <LogoutButton type='iconbutton' /> : <LoginButton type='iconbutton' />) } </>;*/
 
 	const isEnabled = useAppSelector((state) => state.room.countdownTimer.isEnabled);
 
@@ -147,7 +175,40 @@ const TopBar = ({ fullscreenEnabled, fullscreen, onFullscreen }: TopBarProps): R
 						</Typography>
 					}
 				</TopBarDiv>
-				<TopBarDiv grow={1} />
+				{/* **Başlık ve Düzenleme Butonu** */}
+				<TopBarDiv grow={1} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+					{isEditing ? (
+						<TextField
+							variant="standard"
+							autoFocus
+							value={meetingTitle}
+							onChange={handleTitleChange}
+							onBlur={handleTitleBlur}
+							inputProps={{
+								style: {
+									textAlign: 'center',
+									fontSize: '15px',
+									color: 'white',
+									background: 'transparent',
+									border: 'none'
+								}
+							}}
+						/>
+					) : (
+						meetingTitle && (
+							<Typography
+								variant="h6"
+								color="inherit"
+								style={{ cursor: 'pointer', fontSize: '15px' }}
+							>
+								{meetingTitle}
+							</Typography>
+						)
+					)}
+
+					{/* **Düzenleme Butonu** */}
+
+				</TopBarDiv>
 				<TopBarDiv marginRight={1}>
 					{ someoneIsRecording && <RecordIcon color='error' /> }
 					<Hidden smUp>
@@ -155,6 +216,11 @@ const TopBar = ({ fullscreenEnabled, fullscreen, onFullscreen }: TopBarProps): R
 							<MoreIcon />
 						</ControlButton>
 					</Hidden>
+					<Tooltip title="Toplantı başlığını düzenle">
+						<IconButton onClick={handleEditClick} sx={{ color: 'white' }}>
+							<EditIcon />
+						</IconButton>
+					</Tooltip>
 					<Popover
 						id={id}
 						open={open && isSm}
@@ -183,6 +249,11 @@ const TopBar = ({ fullscreenEnabled, fullscreen, onFullscreen }: TopBarProps): R
 						{menuItems}
 					</Hidden>
 				</TopBarDiv>
+				<Tooltip title="Toplantı bağlantısını kopyala">
+					<IconButton size='small' onClick={handleCopyLink} sx={{ color: 'white' }}>
+						<ContentCopyIcon />
+					</IconButton>
+				</Tooltip>
 				<TopBarDiv marginRight={1}>
 					<StyledChip size='small' label={ formatDuration(meetingDuration) } />
 				</TopBarDiv>
@@ -191,7 +262,6 @@ const TopBar = ({ fullscreenEnabled, fullscreen, onFullscreen }: TopBarProps): R
 						<CountdownTimerChip />
 					</TopBarDiv>
 				}
-				<LeaveButton />
 			</Toolbar>
 		</StyledAppBar>
 	);

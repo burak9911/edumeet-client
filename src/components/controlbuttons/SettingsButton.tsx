@@ -1,30 +1,30 @@
+import { MenuItem } from '@mui/material';
 import {
 	useAppDispatch,
 	useAppSelector
 } from '../../store/hooks';
 import SettingsIcon from '@mui/icons-material/Settings';
-import ControlButton, { ControlButtonProps } from './ControlButton';
+import { uiActions } from '../../store/slices/uiSlice';
 import {
 	showSettingsLabel,
 } from '../translated/translatedComponents';
-import { uiActions } from '../../store/slices/uiSlice';
 
 const SettingsButton = ({
-	...props
-}: ControlButtonProps): JSX.Element => {
+	onClick
+}: { onClick: () => void }): JSX.Element => {
 	const dispatch = useAppDispatch();
 	const settingsOpen = useAppSelector((state) => state.ui.settingsOpen);
 
 	return (
-		<ControlButton
-			toolTip={showSettingsLabel()}
-			onClick={() => dispatch(
-				uiActions.setUi({ settingsOpen: !settingsOpen })
-			)}
-			{ ...props }
+		<MenuItem
+			onClick={() => {
+				onClick();
+				dispatch(uiActions.setUi({ settingsOpen: !settingsOpen }));
+			}}
 		>
-			<SettingsIcon />
-		</ControlButton>
+			<SettingsIcon style={{ marginRight: '8px' }} />
+			{showSettingsLabel()}
+		</MenuItem>
 	);
 };
 

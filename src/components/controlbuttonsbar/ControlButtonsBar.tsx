@@ -1,4 +1,4 @@
-import { useAppSelector } from '../../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import MicButton from '../../components/controlbuttons/MicButton';
 import WebcamButton from '../../components/controlbuttons/WebcamButton';
 import ScreenshareButton from '../../components/controlbuttons/ScreenshareButton';
@@ -10,12 +10,45 @@ import { useState } from 'react';
 import ParticipantList from '../participantlist/ParticipantList';
 import Chat from '../chat/Chat';
 import { styled } from '@mui/material/styles';
-import { Box } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import ExtraVideo from '../menuitems/ExtraVideo';
 import Transcription from '../menuitems/Transcription';
 import Filesharing from '../menuitems/Filesharing';
 import Recording from '../menuitems/Recording';
 import MoreButton from '../controlbuttons/MoreButton';
+import CallEndIcon from '@mui/icons-material/CallEnd';
+import { leaveRoom } from '../../store/actions/roomActions';
+import SettingsButton from '../controlbuttons/SettingsButton';
+
+const LeaveButtonStyled = styled(Button)({
+	backgroundColor: 'red',
+	color: 'white',
+	borderRadius: '50%',
+	display: 'flex',
+	alignItems: 'center',
+	justifyContent: 'center',
+	height: '3rem',
+	width: '3rem',
+	transform: 'scale(0.9)',
+	'&:hover': {
+		backgroundColor: 'darkred',
+	}
+});
+
+const LeaveIconButton = (): JSX.Element => {
+	const dispatch = useAppDispatch();
+
+	const handleLeave = () => {
+		dispatch(leaveRoom());
+	};
+
+	return (
+		<LeaveButtonStyled onClick={handleLeave}>
+			<CallEndIcon />
+		</LeaveButtonStyled>
+	);
+};
+
 
 const StyledControlBar = styled(Box)(() => ({
 	position: 'fixed',
@@ -78,6 +111,11 @@ const ControlButtonsBar = (): JSX.Element => {
 						<ScreenshareButton toolTipLocation="bottom" />
 					</SmallButtonWrapper>
 				)}
+				<SmallButtonWrapper>
+					<LeaveButtonStyled>
+						<LeaveIconButton />
+					</LeaveButtonStyled>
+				</SmallButtonWrapper>
 				{!isMobile && (
 					<SmallButtonWrapper>
 						<ParticipantsButton toolTipLocation="bottom" onColor="primary" />
@@ -129,6 +167,7 @@ const ControlButtonsBar = (): JSX.Element => {
 					</Box>
 				</FloatingMenu>
 			)}
+
 			<FloatingMenu
 				anchorEl={moreAnchorEl}
 				open={isMoreOpen}
@@ -136,6 +175,7 @@ const ControlButtonsBar = (): JSX.Element => {
 				anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
 				transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
 			>
+				<SettingsButton onClick={handleMoreClose}/>
 				<ExtraVideo onClick={handleMoreClose} />
 				{filesharingEnabled && <Filesharing onClick={handleMoreClose} />}
 				{canTranscribe && <Transcription onClick={handleMoreClose} />}
